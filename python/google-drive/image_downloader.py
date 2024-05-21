@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
-
+# LoggerService class for logging information and errors
 class LoggerService:
 
     def __init__(self, logs_path, log_file_name):
@@ -17,6 +17,7 @@ class LoggerService:
         self.__logs_path = logs_path
         self.__log_file_path = logs_path + "\\" + log_file_name + ".txt"
 
+    # Method to write logs
     def write_log(self, is_success, message):
         self.__message = message
         self.__is_success = is_success
@@ -28,22 +29,26 @@ class LoggerService:
             self.open_log_file().write(f"{time} (Error): {self.__message} \n")
             exit()
 
+    # Method to create logs directory
     def create_logs_path(self):
         if not path.exists(self.__logs_path):
             mkdir(self.__logs_path)
         else:
             pass
 
+    # Method to open log file
     def open_log_file(self):
         return open(self.__log_file_path, "a+")
 
+    # Method to clear log file
     def clear_log_file(self):
         self.open_log_file().truncate(0)
 
+    # Method to close log file
     def close_log_file(self):
         self.open_log_file().close()
 
-
+# GoogleService class for creating Google API service
 class GoogleService:
 
     def __init__(self, api_name, api_version, scopes, key_file_location):
@@ -52,6 +57,7 @@ class GoogleService:
         self.__scopes = scopes
         self.__key_file_location = key_file_location
 
+    # Method to create Google API service
     def create_service(self):
         credentials = service_account.Credentials.from_service_account_file(self.__key_file_location)
         scoped_credentials = credentials.with_scopes(self.__scopes)
@@ -59,12 +65,13 @@ class GoogleService:
 
         return service
 
-
+# GoogleDriveFilesService class for handling Google Drive files
 class GoogleDriveFilesService:
 
     def __init__(self, service):
         self.__service = service
 
+    # Method to get the first folder ID by name
     def get_first_folder_id_by_name(self, folder_lookup_name, page_size):
         results = self.__service.files().list(
             q=f"mimeType = 'application/vnd.google-apps.folder' and name = '{folder_lookup_name}'",
@@ -73,6 +80,7 @@ class GoogleDriveFilesService:
         ).execute()
         return results.get("files")[0].get("id")
 
+    # Method to get files in a folder by folder ID
     def get_folder_files_by__id(self, folder_id, page_size):
         results = self.__service.files().list(
             q=f"'{folder_id}' in parents",
@@ -81,20 +89,23 @@ class GoogleDriveFilesService:
         ).execute()
         return results.get("files", [])
 
+    # Method to get a media file by file ID
     def get_media_file_by_id(self, file_id):
         return self.__service.files().get_media(fileId=file_id)
 
-
+# ImageService class for handling image files
 class ImageService:
 
     def __init__(self, abs_output_path):
         self.__abs_output_path = abs_output_path
 
+    # Method to create directory for images
     def make_directory(self):
         if path.exists(self.__abs_output_path):
             rmtree(self.__abs_output_path)
         mkdir(self.__abs_output_path)
 
+    # Method to download image
     def download(self, request, file_name):
         file = open(self.__abs_output_path + "\\" + file_name, "wb")
         downloader = MediaIoBaseDownload(file, request)
@@ -102,7 +113,7 @@ class ImageService:
         while done is False:
             status, done = downloader.next_chunk()
 
-
+# Main function
 if __name__ == "__main__":
 
     API_NAME = "drive"
